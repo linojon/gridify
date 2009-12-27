@@ -153,13 +153,20 @@ describe "Grid finder" do
     it "should encode json" do
       new_grid :pager => true, :current_page => 1, :data_type => :json
       json = @grid.encode_records @records
-      json.should == %Q^{"total_records": 2, "page": 1, \
-"chickens": [\
-{"chicken": {"name": "Achick", "created_at": "#{@records[0].created_at.iso8601}", "id": 1, "age": 10}}, \
-{"chicken": {"name": "Bchick", "created_at": "#{@records[1].created_at.iso8601}", "id": 2, "age": 20}}\
-], \
-"total_pages": 1}^
-      
+#       json.should == %Q^{"total_records": 2, "page": 1, \
+# "chickens": [\
+# {"chicken": {"name": "Achick", "created_at": "#{@records[0].created_at.iso8601}", "id": 1, "age": 10}}, \
+# {"chicken": {"name": "Bchick", "created_at": "#{@records[1].created_at.iso8601}", "id": 2, "age": 20}}\
+# ], \
+# "total_pages": 1}^
+      json.should include('"total_records": 2')
+      json.should include('"page": 1')
+      json.should include('"total_pages": 1')
+      json.should include(
+%Q^"chickens": [\
+{"name": "Achick", "created_at": "#{@records[0].created_at.iso8601}", "id": 1, "age": 10}, \
+{"name": "Bchick", "created_at": "#{@records[1].created_at.iso8601}", "id": 2, "age": 20}\
+]^)
     end
     
   end

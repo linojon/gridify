@@ -54,17 +54,31 @@ module Gridify
     # get the button options
     def edit_button_options
       # 'url' => '/notes/{id}', 'mtype' => 'PUT'
-      merge_options_defaults( edit_button, 'reloadAfterSubmit' => false, 'closeAfterEdit' => true)
+      #         {afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'edit');}},
+      
+      # note, closeAfterEdit will not close if response returns a non-empty string (even if "success" message)
+      merge_options_defaults( edit_button, 
+        'reloadAfterSubmit' => false, 
+        'closeAfterEdit' => true,
+        'afterSubmit' => "javascript: function(r,data){return #{error_handler_return_value}(r,data,'edit');}"
+      )
     end
     
     def add_button_options
       # 'url' => '/notes', 'mtype' => 'POST'
-      merge_options_defaults( add_button, 'reloadAfterSubmit' => false, 'closeAfterEdit' => true)
+      merge_options_defaults( add_button, 
+        'reloadAfterSubmit' => false, 
+        'closeAfterEdit' => true,
+        'afterSubmit' => "javascript: function(r,data){return #{error_handler_return_value}(r,data,'add');}"
+      )
     end
     
     def delete_button_options
       # 'url' => '/notes/{id}', 'mtype' => 'DELETE'
-      merge_options_defaults( delete_button, 'reloadAfterSubmit' => false)
+      merge_options_defaults( delete_button, 
+        'reloadAfterSubmit' => false,
+        'afterSubmit' => "javascript: function(r,data){return #{error_handler_return_value}(r,data,'delete');}"
+      )
     end
     
     def search_button_options
@@ -129,7 +143,7 @@ module Gridify
           #vals['shrinkToFit']  = true #default
           vals['forceFit']      = true
           #vals['width']        = is ignored
-          vals['resizeStop']    = 'javascript: jqgrid_fluid_recalc_width'
+          vals['resizeStop']    = 'javascript: gridify_fluid_recalc_width'
       end
       
       vals['sortable']          = true if arranger_type.include?(:sortable)
@@ -219,13 +233,6 @@ module Gridify
                     )^
       end
       
-      #         {edit:#{edit_button},add:#{options[:add]},del:#{options[:delete]},search:false,refresh:true},
-      #         {afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'edit');}},
-      #         {afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'add');}},
-      #         {afterSubmit:function(r,data){return #{options[:error_handler_return_value]}(r,data,'delete');}}
-      #       )
-      
-      
       if arranger_type.include?(:hide_show)
         s << %Q^ .jqGrid('navButtonAdd','##{pager}',{ 
                       caption: "Columns", 
@@ -260,6 +267,10 @@ module Gridify
                  .jqGrid('filterToolbar')^
       end
       
+      # TODO: built in event handlers, eg
+      # loadError 
+      # onSelectRow, onDblClickRow, onRightClickRow etc
+      
       s << '; '
       
       unless search_toolbar == :visible
@@ -275,10 +286,14 @@ module Gridify
     # ------------------
     def js_helpers
       # just move this into appliaction.js?
-      # allow grid resize on window resize events
+
+      # gridify_fluid_recalc_width: allow grid resize on window resize events
       # recalculate width of grid based on parent container; handles multiple grids
       # ref: http://www.trirand.com/blog/?page_id=393/feature-request/Resizable%20grid/
-      %Q^ function jqgrid_fluid_recalc_width(){
+      
+      # afterSubmit: display error message in response
+      
+      %Q^ function gridify_fluid_recalc_width(){
           if (grids = jQuery('.fluid.ui-jqgrid-btable:visible')) {
             grids.each(function(index) {
               gridId = jQuery(this).attr('id');
@@ -287,9 +302,29 @@ module Gridify
             });
           }
         };
-        jQuery(window).bind('resize', jqgrid_fluid_recalc_width);
+
+        jQuery(window).bind('resize', gridify_fluid_recalc_width);
+        
+        function gridify_action_error_handler(r, data, action){
+          if (r.responseText != '') {
+            return [false, r.responseText];
+          } else  {
+            return true;
+          }
+        }
       ^
     end
+
+
+    # if(r.responseText != "") {
+    #   $('#{error_container}').html(r.responseText);
+    #   $('#{error_container}').slideDown();
+    #   //window.setTimeout(function() { // Hide error div after 6 seconds
+    #   // $('#{error_container}').slideUp();
+    #   //}, 6000);
+    #   return false;
+    # }
+    # return true;
     
     # lets options be true or a hash, merges into defaults and returns a hash
     def merge_options_defaults( options, defaults={} )

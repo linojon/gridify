@@ -181,3 +181,17 @@ module Gridify
 
   end
 end
+
+
+# # If you need to display error messages
+# err = ""
+# if user
+#   user.errors.entries.each do |error|
+#     err << "<strong>#{error[0]}</strong> : #{error[1]}<br/>"
+#   end
+# end
+# 
+# render :text => "#{err}"
+
+
+#	{ :add => true, :edit => true, :inline_edit => false, :delete => true, :edit_url => "/users/post_data", :error_handler => "after_submit" }

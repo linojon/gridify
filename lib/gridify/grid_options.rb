@@ -101,12 +101,15 @@ module Gridify
                                           #   we dont know to preserve this so you also need to set in options)
                                           
                   :load_once,             # true to use local data after first load (false)
+                  :error_handler,         # javacript: method for crud error handling (default to "after_submit")
+                  :error_container,       # selector for posting error/flash messages (.errorExplanation)
                                           
                
                   :z
         
     # ----------------------  
     # attribute defaults and special value handling
+    # (sure it'd be easier to initialize defaults using a hash but we want nil to mean the jqGrid default - might be true - and not pass a value at all)
     
     def restful
       @restful==false ? false : true
@@ -240,6 +243,18 @@ module Gridify
           :id          => :id
         }
       end
+    end
+    
+    def error_handler
+      @error_handler || 'gridify_action_error_handler'
+    end
+    
+    def error_handler_return_value
+      error_handler ? error_handler : 'true;'
+    end
+    
+    def error_container
+      @error_container || '.errorExplanation'
     end
 
   end

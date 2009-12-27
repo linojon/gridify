@@ -47,12 +47,16 @@ module Gridify
     def column( name, options={} )
       name = name.to_s
       klass = resource.classify.constantize
+      # TODO: set edit options based on ar_column 
+      # TODO: edit
+      # TODO: handle file input types
+      # TODO: custom input types 
       if col = columns_hash[name]
         # update an existing column
         col.update options
         
       elsif ar = klass.columns.detect {|c| c.name==name}
-        debugger
+        #debugger
         # create column from database schema
         edit = editable && 
           # only edit accessible attributes

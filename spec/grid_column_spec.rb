@@ -59,10 +59,10 @@ describe "Grid column model" do
   
   it "should generate column_model" do
     new_grid
-    @grid.columns[0].properties.should == {:name => "id", :label => "Id", :index => "id", :xmlmap => "id", :align => "right", :sorttype => "integer", :hidden => true}
-    @grid.columns[1].properties.should == {:name => "name", :label => "Name", :index => "name", :xmlmap => "name", :sorttype => "text" }
-    @grid.columns[2].properties.should == {:name => "age", :label => "Age", :index => "age", :xmlmap => "age", :align => "right", :sorttype => "integer"}
-    @grid.columns[3].properties.should == {:name => "created_at", :label => "Created At", :index => "created_at", :xmlmap => "created_at", :sorttype => "date", :formatter=>"date", :formatoptions=>{:newformat=>"FullDateTime", :srcformat=>"UniversalSortableDateTime"} }
+    @grid.columns[0].properties.should == {:name => "id", :label => "Id", :index => "id", :align => "right", :sorttype => "integer", :hidden => true}
+    @grid.columns[1].properties.should == {:name => "name", :label => "Name", :index => "name", :sorttype => "text" }
+    @grid.columns[2].properties.should == {:name => "age", :label => "Age", :index => "age", :align => "right", :sorttype => "integer"}
+    @grid.columns[3].properties.should == {:name => "created_at", :label => "Created At", :index => "created_at", :sorttype => "date", :formatter=>"date", :formatoptions=>{:newformat=>"FullDateTime", :srcformat=>"UniversalSortableDateTime"} }
   end
   
   it "should set current visiblity"

@@ -26,7 +26,7 @@ describe "Grid view" do
       
       it "should extract embedded javascript:" do
         json = @grid.to_json        
-        @grid.to_json.should include('"resizeStop":  jqgrid_fluid_recalc_width')
+        @grid.to_json.should include('"resizeStop":  gridify_fluid_recalc_width')
         @grid.to_json.should include('"beforeSelectRow":  function(){ false; }')
       end
     end
@@ -89,11 +89,11 @@ describe "Grid view" do
       @grid.to_json.should include('"autowidth": true')
       @grid.to_json.should include('"forceFit": true')
       # recalc width after resizing columns      
-      @grid.to_json.should include('"resizeStop":  jqgrid_fluid_recalc_width') 
-      # tag the grid as fluid for the jqgrid_fluid_recalc_width function
+      @grid.to_json.should include('"resizeStop":  gridify_fluid_recalc_width') 
+      # tag the grid as fluid for the gridify_fluid_recalc_width function
       @grid.to_javascript.should include('.addClass("fluid")' )  
       # include the recalc function
-      @grid.to_javascript.should include('function jqgrid_fluid_recalc_width(){')  
+      @grid.to_javascript.should include('function gridify_fluid_recalc_width(){')  
     end
     
     it "should set :width in pixels" do
