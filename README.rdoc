@@ -1,0 +1,279 @@
+= Gridify
+
+A Ruby wrapper and Rails plugin for jqGrid. 
+
+jqGrid is a rich featured data grid built with the jQuery javascript library. http://www.trirand.com/jqgridwiki/doku.php
+
+Gridify defines a simplified, more consistent API for jqGrid rather than directly emulate the jqGrid api and options in Ruby.
+
+Gridify tries to respect the MVC (model-view-controller) architecture of your application. This is challenging because grid features span all three areas: it's clearly part of the "view" as it mostly resides in the browser; columns in the table often directly map to columns in the model (database); and grid's ajax requests are handled by controllers. Gridfy gives you some flexibility in managing grids within MVC.
+
+== Installation
+
+  $ script/plugin install git://github.com/linoj/gridify.git
+  
+== Scripts
+
+Be sure to include all the javascripts and stylesheets in the +<head>+ section of your layouts which use the grid, for example
+
+  <%= stylesheet_link_tag 'application' %>
+  <%= stylesheet_link_tag 'ui/start/jquery-ui-1.7.2.custom' %>
+  <%= stylesheet_link_tag 'ui.jqgrid' %>
+  <%= stylesheet_link_tag 'ui.multiselect' %>
+
+  <%= javascript_include_tag 'jquery-1.3.2.min' %>
+  <%= javascript_include_tag 'jquery-ui-1.7.2.custom.min' %>
+  <%= javascript_include_tag 'grid.locale-en' %>
+  <%= javascript_include_tag 'jquery.jqGrid' %>
+  <%= javascript_include_tag 'ui.multiselect' %>  
+  
+Note: When you download jqGrid, jQuery, and jqUI grab all the bits you'll be using (or just package everything)
+
+== Examples
+
+=== Example 1
+
+Lets say we have an ActiveRecord model "Note" which we want to display in a grid. 
+
+In app/models/note.rb,
+
+  class Note < ActiveRecord::Base
+    gridify
+  end
+  
+In the NotesController,
+
+  def index
+    if request.xhr?
+      records = Note.find_for_grid :grid, params
+      render :xml => Note.grid.encode_records(records)
+    else 
+      @grid = Note.grid
+    end    
+  end
+
+In the app/views/notes/index.html.erb,
+
+  <%= @grid %>
+  <h1>Notes Grid<h1>
+  <table id="notes_grid"></table>
+  <div id="notes_grid_pager"></div> 
+  
+In this example, +gridify+ creates a default grid named "grid" for the Notes model. In the controller, the #index html action supplies the +@grid+ object used by the view; the #index xml action responds to request +params+ with the encoded data. In the view, +@grid.to_s+ generates the javascript code needed for the grid, which populates the table and pager div. 
+
+=== Example 2 
+
+Here we add some options, including
+
+* use a grid named "mylist" (allowing multiple grids on a model)
+* limit to specific grid columns
+* ajax requests in json format (instead of xml)
+* enable user resizing the grid width and height
+* enable user arranging and resizing columns
+* enable the search toolbar (search fields atop each column when search button is toggled)
+
+In app/models/note.rb,
+
+  class Note < ActiveRecord::Base
+    gridify :mylist, 
+      :only => [:title, :body, :updated_at],
+      :data_type => :json,
+      :resizeable => true,
+      :arranger => [:sortable, :hide_show],
+      :search_toolbar => true
+  end
+  
+In the NotesController is same as Example 1 except returns json instead of xml (all the search and sort params are handled by find_for_grid)
+
+  def index
+    if request.xhr?
+      records = Note.find_for_grid :mylist, params
+      render :json => Note.grid.encode_records(records)
+    else 
+      @grid = Note.grid :mylist
+    end    
+  end
+
+In the app/views/notes/index.html.erb is the same as Example 1, except uses "mylist" name
+
+  <%= @grid %>
+  <h1>My Notes List<h1>
+  <table id="notes_mylist"></table>
+  <div id="notes_mylist_pager"></div> 
+
+=== Example 3
+
+Here we progressively enhance an html table into a grid. Grid is independent of the ActiveRecord model. No ajax requests.
+
+In app/views/notes/index.html.erb,
+
+  <%= Grid.new( Note, :dom_id => "list", :table_to_grid => true ) %>
+  <h1>Notes List</h1>
+  <table id="list">
+    <tr>
+      <th>Title</th>
+      <th>Body</th>
+    </tr>
+    <tbody>
+    <% for note in @notes %>
+      <tr>
+        <td><%=h note.title %></td>
+        <td><%=h note.body %></td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+  <div id="list_pager"></div>
+
+NotesController#index is standard html response, for example,
+
+  def index
+    @notes = Note.all
+  end
+
+=== Example 4
+
+In the more complex example we take more control of individual columns, including
+* initially hide the created_at column
+* the title column is not resizable
+
+and allow record (row) editing, adding, and delete via RESTful requests
+
+In app/models/note.rb,
+
+  class Note < ActiveRecord::Base
+    gridify :editable => true, 
+      :pager => true, :edit_button => true, :add_button => true, :delete_button => true do |grid|
+        grid.column :created_at, :hidden => true
+        grid.column :title, :resizable => false
+      end
+  end
+  
+In the NotesController is same as Example 1, with other actions
+
+  def index
+    if request.xhr?
+      records = Note.find_for_grid :grid, params
+      render :xml => Note.grid.encode_records(records)
+    else 
+      @grid = Note.grid
+    end    
+  end
+  
+  def create
+    if request.xhr?
+      note_params = Note.grid.member_params(params)
+      @note = Note.new( note_params )
+      # must return nothing on success (until we setup a format for returning ok vs error)
+      msg = ""
+      unless @note.save
+        @note.errors.entries.each do |error|
+          msg << "<strong>#{error[0]}</strong> : #{error[1]}<br/>"
+        end        
+      end
+      render :text => msg
+    else
+      @note = Note.new(params[:note])
+      if @note.save
+        flash[:notice] = "Successfully created note."
+        redirect_to @note
+      else
+        render :action => 'new'
+      end
+    end    
+  end
+  
+  def update
+    @note = Note.find(params[:id])
+    if request.xhr?
+      note_params = Note.grid.member_params(params)
+      msg = "success"
+      unless @note.update_attributes( note_params )
+        @note.errors.entries.each do |error|
+          msg << "<strong>#{error[0]}</strong> : #{error[1]}<br/>"
+        end        
+      end
+      render :text => msg
+    else
+      if @note.update_attributes(params[:note])
+        flash[:notice] = "Successfully updated note."
+        redirect_to @note
+      else
+        render :action => 'edit'
+      end
+    end
+  end
+  
+  def destroy
+    # NOTE: if allow multiselect should check :id for string of comma delimited id's 
+    @note = Note.find(params[:id])
+    @note.destroy
+    if request.xhr?
+      render :nothing => true
+    else
+      flash[:notice] = "Successfully destroyed note."
+      redirect_to notes_url       
+    end
+  end
+  
+
+In the app/views/notes/index.html.erb is the same as Example 1
+
+  <%= @grid %>
+  <h1>Notes Grid<h1>
+  <table id="notes_grid"></table>
+  <div id="notes_grid_pager"></div> 
+
+For this to work, you should use my fork of jqgrid http://github.com/linoj/jqGrid which adds support for RESTful routes (see http://www.vaporbase.com/postings/jqGrid_for_RESTful_Rails ) until it gets merged.
+
+The #member_params method maps the attribute parameters into a hash as expected by update_attributes.
+
+=== Example 5
+
+By way of better practices, I recommend you ensure the grid javascript is placed in the document header. For example, 
+
+In views/layouts/application.rb, the +<header>+ should include
+
+  <header>
+    ...
+    <%= yield :head %>
+  </header>
+
+And in the views, say,
+
+  <% content_for :head %>
+    <%= @grid %>
+  <% end 
+  <h1>Notes Grid<h1>
+  <table id="notes_grid"></table>
+  <div id="notes_grid_pager"></div> 
+
+If it bothers you to put view-specific options in the model, these can be added later (e.g. in the view or in a view helper) using #update. For example,
+
+  <%= @grid.update( :search_toolbar => false ) %>
+  
+Or if it bothers you to put any of the grid in the model, it can be avoided altogether and just create the grid on the fly when needed,
+
+in helpers/notes.rb,
+
+  def create_grid( name )
+    Grid.new( Note, :dom_id => name, :resizable => true )
+  end
+    
+in views/notes/index.html.erb,
+
+  <%= create_grid "list" %>
+  <table id="list"></table>
+  <div id="list_pager"></div> 
+
+
+== API
+
+See the source code for all the options. For most of the grid and view options, see grid_options.rb. For column model options, see grid_column.rb. 
+
+You can escape the Gridify api and use the jqGrid native options directly.  
+
+
+
+
+Copyright (c) 2010 Jonathan Linowes, released under the MIT license
