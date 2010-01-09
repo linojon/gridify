@@ -251,21 +251,6 @@ And in the views, say,
 If it bothers you to put view-specific options in the model, these can be added later (e.g. in the view or in a view helper) using #update. For example,
 
   <%= @grid.update( :search_toolbar => false ) %>
-  
-Or if it bothers you to put any of the grid in the model, it can be avoided altogether and just create the grid on the fly when needed,
-
-in helpers/notes.rb,
-
-  def create_grid( name )
-    Grid.new( Note, :dom_id => name, :resizable => true )
-  end
-    
-in views/notes/index.html.erb,
-
-  <%= create_grid "list" %>
-  <table id="list"></table>
-  <div id="list_pager"></div> 
-
 
 == API
 
@@ -274,6 +259,6 @@ See the source code for all the options. For most of the grid and view options, 
 You can escape the Gridify api and use the jqGrid native options directly.  
 
 
-
+-----
 
 Copyright (c) 2010 Jonathan Linowes, released under the MIT license
