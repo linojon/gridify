@@ -1,3 +1,7 @@
+== Note
+
+This project is no longer maintained. Lately I've been using DataTables for jQuery (http://datatables.net/) instead of jqGrid, and like the simple_datatables gem for integration with Rails 3.1 apps (http://github.com/gryphon/simple_datatables) 
+
 = Gridify
 
 A Ruby wrapper and Rails plugin for jqGrid. 
